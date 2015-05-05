@@ -5,38 +5,59 @@
 
 #include "display.h"
 
+/* DISPLAY DRIVER
+	 Drives a bus of up to 8 LCD displays.
+	 
+	 Requirements:
+	 - GPIO0:
+		 o Pin 2: Shift-in value (shift register)
+		 o Pin 3: Clock pulse (shift register)
+		 o Pin 7: Async reset (shift register)
+		 o Pin 8-9: Data pins MSB (display)
+	 - GPIO1:
+		 o Pin 0: Register select (display)
+		 o Pin 1: Write/read select (display)
+		 o Pin 2: Enable pulse (shift register)
+		 o Pin 4-5: Data pins LSB (display)
+		 o Pin 8: Bus direction select (bus transceiver)	 
+*/
+
 #define D_ENABLE(en) do { \
-	LPC_GPIO1->MASKED_ACCESS[1UL << 2] = ~((unsigned)(en)) << 2; \
+	LPC_GPIO1->MASKED_ACCESS[1UL << 2] = !(en) << 2; \
 } while (0)
 
 #define D_SHF_RESET(rst) do { \
-	LPC_GPIO0->MASKED_ACCESS[1UL << 7] = ~((unsigned)(rst)) << 7; \
+	LPC_GPIO0->MASKED_ACCESS[1UL << 7] = !(rst) << 7; \
 } while (0)
 
 #define D_SHF_DATA(data) do { \
-	LPC_GPIO0->MASKED_ACCESS[1UL << 2] = (data) << 2; \
+	LPC_GPIO0->MASKED_ACCESS[1UL << 2] = !!(data) << 2; \
 } while (0)
 
 #define D_SHF_CLK(clk) do { \
-	LPC_GPIO0->MASKED_ACCESS[1UL << 3] = (clk) << 3; \
+	LPC_GPIO0->MASKED_ACCESS[1UL << 3] = !!(clk) << 3; \
 } while (0)
 
 #define D_REG_SEL(reg) do { \
-	LPC_GPIO1->MASKED_ACCESS[1UL << 0] = (reg); \
+	LPC_GPIO1->MASKED_ACCESS[1UL << 0] = !!(reg); \
 } while (0)
 
 #define D_DIR_SEL(read) do { \
-	if (read) LPC_GPIO1->DIR &= ~(0x0FUL << 4); \
-	else      LPC_GPIO1->DIR |= 0x0FUL << 4; \
-	LPC_GPIO1->MASKED_ACCESS[1UL << 1] = (read) << 1; \
-	LPC_GPIO1->MASKED_ACCESS[1UL << 8] = !(read) << 8; \
+	if (read) LPC_GPIO1->DIR &= ~(0x03UL << 4); \
+	else      LPC_GPIO1->DIR |= 0x03UL << 4; \
+	if (read) LPC_GPIO0->DIR &= ~(0x03UL << 8); \
+	else      LPC_GPIO0->DIR |= 0x03UL << 8; \
+	LPC_GPIO1->MASKED_ACCESS[1UL << 1] = !!(read) << 1; \
+	LPC_GPIO1->MASKED_ACCESS[1UL << 8] =  !(read) << 8; \
 } while (0)
 
 #define D_WRITE(data) do { \
-	LPC_GPIO1->MASKED_ACCESS[0x0FUL << 4] = (data) << 4; \
+	LPC_GPIO1->MASKED_ACCESS[0x03UL << 4] = (data) << 4; \
+	LPC_GPIO0->MASKED_ACCESS[0x03UL << 8] = (data) << 6; \
 } while (0)
 
-#define D_DATA ((LPC_GPIO1->MASKED_ACCESS[0x0FUL << 4]) >> 4)
+#define D_DATA ((LPC_GPIO1->MASKED_ACCESS[0x03UL << 4] >> 4) | \
+								(LPC_GPIO0->MASKED_ACCESS[0x03UL << 8] >> 6))
 
 #define D_DELAY(len) do { \
 	uint32_t tick_ = osKernelSysTick(); \
@@ -66,10 +87,10 @@ int32_t Display_Initialize()
 												 (2UL << 3) |						/* Select pull-up */
 												 (2UL << 6) );					/* Keep reserved values */
 	
-	LPC_GPIO1->DIR  |= 0x1F7UL; 									/* Pins 0-2, 4-8 configured as outputs */
-	LPC_GPIO1->DATA &= ~0x1F7UL; 									/* Clear outputs */
-	LPC_GPIO0->DIR  |= 0x08CUL;									  /* Pins 3, 4, 7 configured as outputs */
-	LPC_GPIO0->DATA &= ~0x08CUL;									/* Clear outputs */
+	LPC_GPIO1->DIR  |= 0x0137UL; 									/* Pins 0-2, 4-5, 8 configured as outputs */
+	LPC_GPIO1->DATA &= ~0x0137UL; 									/* Clear outputs */
+	LPC_GPIO0->DIR  |= 0x038CUL;									  /* Pins 2, 3, 7-9 configured as outputs */
+	LPC_GPIO0->DATA &= ~0x038CUL;									/* Clear outputs */
 	
 	D_ENABLE(0);
 	D_REG_SEL(0);
@@ -89,9 +110,15 @@ int32_t Display_ChipSel(int8_t chip)
 	
 	// reset shift register
 	D_SHF_RESET(1);
-	D_DELAY(1);
+	__NOP();
+	__NOP();
+	__NOP();
+	__NOP();
 	D_SHF_RESET(0);
-	D_DELAY(1);
+	__NOP();
+	__NOP();
+	__NOP();
+	__NOP();
 	
 	// shift in first bit
 	D_SHF_DATA(1);

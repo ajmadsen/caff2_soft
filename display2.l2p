@@ -1,0 +1,13 @@
+--cpu Cortex-M0
+".\display.o"
+".\main.o"
+".\thread_uart.o"
+".\thread_display.o"
+"C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.2.0\CMSIS_RTX\LIB\ARM\RTX_CM0.lib"
+".\rtx_conf_cm.o"
+".\startup_lpc11xx.o"
+".\system_lpc11xx.o"
+--library_type=microlib --strict --scatter ".\display2.sct"
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\display2.map" -o .\display2.axf

@@ -1,0 +1,7 @@
+-c --cpu Cortex-M0 -D__RTX -D__MICROLIB -g -O2 --apcs=interwork --split_sections
+-I U:\Desktop\display2\RTE
+-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.2.0\CMSIS\Include
+-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.2.0\CMSIS_RTX\INC
+-I C:\Keil_v5\ARM\PACK\Keil\LPC1100_DFP\1.3.0\Device\Include\LPC11xx
+-D__UVISION_VERSION="514" -D_RTE_
+-o .\main.o --omf_browse .\main.crf --depend .\main.d --feedback ".\display2.fed" "Sources\main.c"
