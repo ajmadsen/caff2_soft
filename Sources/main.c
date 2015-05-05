@@ -14,11 +14,11 @@ void sys_err() { while(1) __WFE(); }
 
 int main()
 {
-	osKernelInitialize();
-	osDelay(200); // wait before display initialization
-	
-	Init_Thread_Display();
-	Init_Thread_uart();
-	
-	osKernelStart();	
+  osKernelInitialize();
+  osDelay(200); // wait before display initialization
+  
+  Init_Thread_Display();
+  Init_Thread_uart();
+  
+  osKernelStart();  
 }

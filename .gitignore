@@ -90,3 +90,7 @@ $RECYCLE.BIN/
 *.lnp
 *.bak
 *.Vishwas
+
+# vim
+*.*~
+*.swp
