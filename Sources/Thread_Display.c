@@ -1,12 +1,9 @@
 #include "types.h"
 #include "display.h"
 
-#include <string.h>
-
-#undef osObjectsPublic
-#define osObjectsExternal
-#include <cmsis_os.h>                                           // CMSIS RTOS header file
 #include "osObjects.h"
+#include <cmsis_os.h>                                           // CMSIS RTOS header file
+#include <string.h>
 
 
 /*----------------------------------------------------------------------------

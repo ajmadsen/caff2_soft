@@ -1,11 +1,9 @@
 #include "LPC11xx.h"                    // Device header
 #include "types.h"
 
-#undef osObjectsPublic
-#define osObjectsExternal
-#include <cmsis_os.h>                                           // CMSIS RTOS header file
 #include "osObjects.h"
 
+#include <cmsis_os.h>                                           // CMSIS RTOS header file
 
 int getchar(void);
 void putchar(int);
@@ -69,11 +67,14 @@ void Thread_uart (void const *argument) {
 
 int getchar() {
 	int c;
+	
 	while (!(LPC_UART->LSR & 0x01));
 	c = LPC_UART->RBR;
+	
 	putchar(c);
 	if (c == '\r')
 		putchar('\n');
+	
 	return c;
 }
 
