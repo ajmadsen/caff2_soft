@@ -1,6 +1,8 @@
 #include "types.h"
 #include "display.h"
 
+#include <string.h>
+
 #undef osObjectsPublic
 #define osObjectsExternal
 #include <cmsis_os.h>                                           // CMSIS RTOS header file
@@ -13,6 +15,7 @@
 
 
 int Init_Thread_Display (void) {
+	int i;
 	
 	qid_display_msg = osMailCreate(osMailQ(display_msg), NULL);
 
@@ -21,20 +24,20 @@ int Init_Thread_Display (void) {
 	
 	Display_Initialize();
 	
-	Display_ChipSel(0);
-	Display_Reset();
-	Display_Clear();
-	Display_Puts("Awaiting input...");
-	Display_ChipSel(1);
-	Display_Reset();
-	Display_Clear();
-	Display_Puts("Awaiting input...");
+	for (i = 0; i < 4; ++i) {
+		Display_ChipSel(i);
+		Display_Reset();
+		Display_Clear();
+		Display_Puts("Awaiting input...");
+	}
   
   return(0);
 }
 
 void Thread_Display (void const *argument) {
 	Display_Msg *msg = 0;
+	char *c;
+	int scr;
 	osEvent evt;
 	
   while (1) {
@@ -42,15 +45,37 @@ void Thread_Display (void const *argument) {
 		if (evt.status == osEventMail) {
 			msg = evt.value.p;
 			
-			Display_ChipSel(msg->scr);
-			if (msg->clr) Display_Clear();
+			c = msg->buf;
 			
-			Display_Puts(msg->msg);
+			// command: s <display> <message>
+			//   writes a message to a display
+			if (!strncmp(c, "s ", 2)) {
+				c += 2;
+				
+				scr = *c - '0';
+				if (scr > 9 || scr < 0) continue;
+				c += 2;
+				
+				Display_ChipSel(scr);
+				Display_Clear();
+				
+				Display_Puts(c);
+			}
+			
+			// command: c <display>
+			//    clears a display
+			else if (!strncmp(c, "c ", 2)) {
+				c += 2;
+				
+				scr = *c - '0';
+				if (scr > 9 || scr < 0) continue;
+				
+				Display_ChipSel(scr);
+				Display_Clear();
+			}
 			
 			osMailFree(qid_display_msg, msg);
 			msg = 0;
-		} else if (evt.status == osOK) {
-			__breakpoint(0);
 		}
   }
 }

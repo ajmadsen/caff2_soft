@@ -35,7 +35,9 @@ int Init_Thread_uart (void) {
   tid_Thread_uart = osThreadCreate (osThread(Thread_uart), NULL);
   if(!tid_Thread_uart) return(-1);
 	
-	puts("Hello world!\r\n");
+	puts("Commands:\r\n");
+	puts("    s <screen> <message>    Writes message to screen\r\n");
+	puts("\r\n");
   
   return(0);
 }
@@ -51,27 +53,12 @@ void Thread_uart (void const *argument) {
 		msg = osMailAlloc(qid_display_msg, osWaitForever);
 		if (!msg) continue;
 		
-		msg->scr = getchar() - '0';
-		if ((0 > msg->scr) || (msg->scr > 9)) {
-			osMailFree(qid_display_msg, msg);
-			continue;
+		while ((c = getchar()) != '\r' && c != '\n' && (idx + 1 < sizeof(msg->buf))) {
+			msg->buf[idx++] = c;
 		}
 		
-		getchar();
-		
-		msg->clr = !!(getchar() - '0');
-		
-		getchar();
-		
-		while ((c = getchar()) != '\r' && c != '\n' && (idx + 1 < sizeof(msg->msg))) {
-			msg->msg[idx++] = c;
-		}
-		
-		msg->msg[idx] = 0;
+		msg->buf[idx] = 0;
 		msg->length = idx;
-		puts("Writing message: ");
-		puts(msg->msg);
-		puts("\r\n");
 		
 		st = osMailPut(qid_display_msg, msg);
 		if (st != osOK)
